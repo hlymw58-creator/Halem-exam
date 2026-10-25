@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الاختبارات</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("shafeei_theme")||"light"}catch(e){}</script>
+<style>
+:root{--primary-color:#1b5e20;--primary-hover:#2e7d32;--bg-color:#f4f6f8;--card-bg:#fff;--text-color:#222;--border-color:#e0e0e0;--danger-color:#d32f2f;--danger-bg:#ffebee;--success-color:#2e7d32;--success-bg:#e8f5e9}
+[data-theme=dark]{--bg-color:#0e1a12;--card-bg:#16221b;--text-color:#e6eee8;--border-color:#2b3f32;--danger-bg:#3b1a1a;--success-bg:#173b1d;--primary-color:#2e7d32;--primary-hover:#3a9440}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-color);color:var(--text-color);font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;direction:rtl;line-height:1.7}
+.wrap{max-width:820px;margin:0 auto;padding:16px}
+.card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+h1,h2,h3{color:var(--primary-color);margin:.2em 0}
+input,textarea,select{width:100%;padding:10px;margin:6px 0;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-color);color:var(--text-color);font:inherit}
+textarea{min-height:70px;resize:vertical}
+.btn{background:var(--primary-color);color:#fff;border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--primary-hover)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 11px;font-size:.85em}.btn.danger{background:var(--danger-color)}.btn.ghost{background:transparent;color:var(--primary-color);border:1px solid var(--primary-color)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{flex:1}
+.opt{display:flex;gap:8px;align-items:center}.opt input[type=radio]{width:auto;flex:none;transform:scale(1.3)}
+.badge{padding:2px 10px;border-radius:20px;font-size:.8em;background:var(--success-bg);color:var(--success-color)}.badge.off{background:var(--danger-bg);color:var(--danger-color)}
+.muted{opacity:.7;font-size:.9em}.msg{padding:12px;border-radius:10px;background:var(--danger-bg);color:var(--danger-color);margin:8px 0}
+.qtext{white-space:pre-wrap;font-weight:700;font-size:1.05em}.qimg{max-width:100%;border-radius:10px;margin:8px 0}
+.choice{display:flex;gap:10px;align-items:center;padding:10px;margin:6px 0;border:1px solid var(--border-color);border-radius:10px;cursor:pointer}
+.choice:has(input:checked){border-color:var(--primary-color);background:var(--success-bg)}.choice input{width:auto;margin:0;transform:scale(1.25)}
+.timer{position:sticky;top:0;z-index:5;text-align:center;font-weight:800;font-size:1.2em;padding:8px;background:var(--card-bg);border-bottom:2px solid var(--primary-color)}
+.big{font-size:3em;font-weight:800;color:var(--primary-color);text-align:center}
+.center{text-align:center}
+</style>
+</head>
+<body><div class="wrap" id="app"><div class="card center">جاري التحميل...</div></div>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzweziUL7Q3o62k-Ci16kbHho1EWseeXbZlbC4X3SC61KsVrQenlrUMCGoDrG1u1zvWRg/exec';   // رابط Web App الخاص بـ Code.gs (ينتهي بـ /exec)
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let PASS = sessionStorage.getItem('ex_pass') || '', Q = [], EDIT_ID = '';
+
+async function api(b) {
+  try {
+    const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ pass: PASS }, b)) });
+    return await r.json();
+  } catch (e) { return { status: 'error', message: 'تعذر الاتصال بالسيرفر' }; }
+}
+const view = h => $('app').innerHTML = h;
+
+function loginView(m) {
+  view(`<div class="card center"><h2>🔐 لوحة تحكم الاختبارات</h2>
+  <input type="password" id="pw" placeholder="كلمة سر المطور" onkeydown="if(event.key==='Enter')login()">
+  ${m ? `<div class="msg">${esc(m)}</div>` : ''}<button class="btn" onclick="login()">دخول</button></div>`);
+}
+async function login() {
+  PASS = $('pw').value; const r = await api({ action: 'list' });
+  if (r.status !== 'ok') return loginView(r.message);
+  sessionStorage.setItem('ex_pass', PASS); listView(r.exams);
+}
+function examUrl(id) { return location.origin + location.pathname + '?id=' + id; }
+
+async function home() {
+  const r = await api({ action: 'list' });
+  if (r.status !== 'ok') { sessionStorage.removeItem('ex_pass'); return loginView(r.message); }
+  listView(r.exams);
+}
+function listView(ex) {
+  view(`<div class="row"><h1>📝 الاختبارات</h1><span class="sp"></span><button class="btn" onclick="editor()">+ اختبار جديد</button></div>
+  ${ex.length ? ex.map(e => `<div class="card"><div class="row"><h3>${esc(e.title)}</h3>
+    <span class="badge ${e.status === 'مفعل' ? '' : 'off'}">${esc(e.status)}</span><span class="sp"></span>
+    <span class="muted">${e.count} سؤال • ${e.minutes ? e.minutes + ' دقيقة' : 'بدون مؤقت'}</span></div>
+    <input readonly value="${esc(examUrl(e.id))}" onclick="this.select()">
+    <div class="row"><button class="btn sm" onclick="copy('${e.id}')">نسخ الرابط</button>
+    <button class="btn sm ghost" onclick="editor('${e.id}')">تعديل</button>
+    <button class="btn sm ghost" onclick="tg('${e.id}')">${e.status === 'مفعل' ? 'إيقاف' : 'تفعيل'}</button>
+    <button class="btn sm danger" onclick="del('${e.id}')">حذف</button></div></div>`).join('') : '<div class="card center muted">لا توجد اختبارات بعد</div>'}`);
+}
+function copy(id) { navigator.clipboard.writeText(examUrl(id)).then(() => alert('تم نسخ الرابط ✅')); }
+async function tg(id) { await api({ action: 'toggle', id }); home(); }
+async function del(id) { if (confirm('حذف الاختبار؟ (درجات الطلاب تبقى في الشيت)')) { await api({ action: 'delete', id }); home(); } }
+
+// ---------- محرر الاختبار ----------
+const newQ = t => ({ type: t || 'mcq', text: '', image: '', options: t === 'tf' ? ['صح', 'خطأ'] : ['', '', '', ''], answer: 0 });
+async function editor(id) {
+  EDIT_ID = id || ''; Q = [newQ()]; let t = '', m = 0;
+  if (id) {
+    const r = await api({ action: 'get', id }); if (r.status !== 'ok') return alert(r.message);
+    t = r.exam.title; m = r.exam.minutes; Q = r.exam.questions;
+  }
+  view(`<div class="row"><h1>${id ? 'تعديل الاختبار' : 'اختبار جديد'}</h1><span class="sp"></span><button class="btn ghost" onclick="home()">رجوع</button></div>
+  <div class="card"><input id="t" placeholder="اسم الاختبار" value="${esc(t)}">
+  <input id="m" type="number" min="0" placeholder="مدة الاختبار بالدقائق (0 = بدون مؤقت)" value="${m || ''}"></div>
+  <div id="qs"></div>
+  <div class="row"><button class="btn ghost" onclick="Q.push(newQ('mcq'));draw()">+ اختيار من متعدد</button>
+  <button class="btn ghost" onclick="Q.push(newQ('tf'));draw()">+ صح وخطأ</button><span class="sp"></span>
+  <button class="btn" id="sv" onclick="save()">💾 حفظ ونشر</button></div><div id="res"></div>`);
+  draw();
+}
+function draw() {
+  $('qs').innerHTML = Q.map((q, i) => `<div class="card"><div class="row"><b>سؤال ${i + 1}</b><span class="badge">${q.type === 'tf' ? 'صح وخطأ' : 'اختيار من متعدد'}</span><span class="sp"></span>
+  <button class="btn sm ghost" onclick="mv(${i},-1)">▲</button><button class="btn sm ghost" onclick="mv(${i},1)">▼</button>
+  <button class="btn sm danger" onclick="Q.splice(${i},1);draw()">حذف</button></div>
+  <textarea placeholder="نص السؤال" oninput="Q[${i}].text=this.value">${esc(q.text)}</textarea>
+  <input placeholder="رابط صورة للسؤال (اختياري — رابط Drive أو مباشر)" value="${esc(q.image)}" oninput="Q[${i}].image=this.value">
+  ${q.type === 'tf'
+    ? ['صح', 'خطأ'].map((o, j) => `<div class="opt"><input type="radio" name="a${i}" ${q.answer === j ? 'checked' : ''} onchange="Q[${i}].answer=${j}"> ${o}</div>`).join('')
+    : q.options.map((o, j) => `<div class="opt"><input type="radio" name="a${i}" ${q.answer === j ? 'checked' : ''} onchange="Q[${i}].answer=${j}" title="الإجابة الصحيحة">
+      <input placeholder="الاختيار ${j + 1}" value="${esc(o)}" oninput="Q[${i}].options[${j}]=this.value">
+      ${q.options.length > 2 ? `<button class="btn sm danger" onclick="rmo(${i},${j})">×</button>` : ''}</div>`).join('') +
+      (q.options.length < 6 ? `<button class="btn sm ghost" onclick="Q[${i}].options.push('');draw()">+ اختيار</button>` : '') +
+      '<div class="muted">حدّد الدائرة بجانب الإجابة الصحيحة</div>'}
+  </div>`).join('');
+}
+function mv(i, d) { const j = i + d; if (j < 0 || j >= Q.length) return; [Q[i], Q[j]] = [Q[j], Q[i]]; draw(); }
+function rmo(i, j) { const q = Q[i]; q.options.splice(j, 1); if (q.answer >= q.options.length) q.answer = 0; else if (q.answer > j) q.answer--; draw(); }
+
+async function save() {
+  const title = $('t').value.trim(), res = $('res');
+  const bad = Q.findIndex(q => !q.text.trim() || (q.type === 'mcq' && q.options.some(o => !o.trim())));
+  if (!title) return res.innerHTML = '<div class="msg">اكتب اسم الاختبار</div>';
+  if (!Q.length) return res.innerHTML = '<div class="msg">أضف سؤالاً واحداً على الأقل</div>';
+  if (bad >= 0) return res.innerHTML = `<div class="msg">أكمل نص السؤال وكل اختياراته (سؤال ${bad + 1})</div>`;
+  $('sv').disabled = true; $('sv').textContent = 'جاري الحفظ...';
+  const r = await api({ action: 'save', exam: { id: EDIT_ID, title, minutes: +$('m').value || 0, questions: Q } });
+  if (r.status !== 'ok') { $('sv').disabled = false; $('sv').textContent = '💾 حفظ ونشر'; return res.innerHTML = `<div class="msg">${esc(r.message)}</div>`; }
+  const u = examUrl(r.id);
+  view(`<div class="card center"><h2>✅ تم الحفظ</h2><p>رابط الاختبار — ضعه في المنصة:</p>
+  <input readonly value="${esc(u)}" onclick="this.select()"><div class="row" style="justify-content:center">
+  <button class="btn" onclick="navigator.clipboard.writeText('${u}').then(()=>alert('تم النسخ'))">نسخ الرابط</button>
+  <button class="btn ghost" onclick="home()">رجوع للقائمة</button></div></div>`);
+}
+
+// ===== صفحة الطالب =====
+const qp = new URLSearchParams(location.search), id = qp.get('id');
+let phone = qp.get('phone');
+if (!phone) { try { phone = (JSON.parse(localStorage.getItem('shafeei_student') || 'null') || {}).phone; } catch (e) {} }
+let EX = null, A = [], timer = null, sending = false;
+const msg = m => view(`<div class="card center"><div class="msg">${esc(m)}</div></div>`);
+
+function img(u) {
+  if (!u) return '';
+  const m = u.match(/\/d\/([\w-]+)|[?&]id=([\w-]+)/);
+  if (m && /drive\.google/.test(u)) u = 'https://drive.google.com/thumbnail?id=' + (m[1] || m[2]) + '&sz=w1000';
+  return `<img class="qimg" src="${esc(u)}" alt="">`;
+}
+function resultView(name, score, pre) {
+  const p = String(score).match(/(\d+)\s*\/\s*(\d+)/), pct = p ? Math.round(p[1] / p[2] * 100) : null;
+  view(`<div class="card center"><h2>${esc(pre)}</h2><h3>${esc(name)}</h3><div class="big">${esc(score)}</div>
+  ${pct !== null ? `<div class="muted">النسبة: ${pct}%</div>` : ''}<p class="muted">تم تسجيل درجتك ✅ يمكنك إغلاق الصفحة والعودة للمنصة.</p></div>`);
+}
+
+async function init() {
+  if (!id) return msg('رابط الاختبار غير صحيح');
+  if (!phone) return msg('ادخل إلى الاختبار من داخل المنصة بعد تسجيل الدخول');
+  const r = await api({ action: 'getExam', id, phone });
+  if (r.status === 'error') return msg(r.message);
+  if (r.status === 'taken') return resultView(r.name, r.score, 'لقد أديت هذا الاختبار من قبل — درجتك:');
+  EX = r; document.title = r.title;
+  view(`<div class="card center"><h1>${esc(r.title)}</h1><p>الطالب: <b>${esc(r.name)}</b></p>
+  <p class="muted">${r.questions.length} سؤال • ${r.minutes ? 'المدة ' + r.minutes + ' دقيقة' : 'بدون مؤقت'}<br>يُسمح بتسليم الاختبار مرة واحدة فقط.</p>
+  <button class="btn" onclick="start()">ابدأ الاختبار</button></div>`);
+}
+function start() {
+  A = EX.questions.map(() => -1);
+  view(`<div class="timer" id="tm" ${EX.minutes ? '' : 'hidden'}></div>
+  <div class="card"><h2>${esc(EX.title)}</h2><span class="muted">الطالب: ${esc(EX.name)} • أجبت <b id="pg">0</b> من ${A.length}</span></div>
+  ${EX.questions.map((q, i) => `<div class="card"><div class="qtext">${i + 1}) ${esc(q.text)}</div>${img(q.image)}
+  ${q.options.map((o, j) => `<label class="choice"><input type="radio" name="q${i}" onchange="A[${i}]=${j};$('pg').textContent=A.filter(x=>x>=0).length"> ${esc(o)}</label>`).join('')}</div>`).join('')}
+  <div class="center"><button class="btn" id="sb" onclick="send(false)">تسليم الاختبار</button></div>`);
+  window.scrollTo(0, 0);
+  if (EX.minutes) {
+    const end = Date.now() + EX.minutes * 60000;
+    timer = setInterval(() => {
+      const s = Math.max(0, Math.round((end - Date.now()) / 1000));
+      $('tm').textContent = '⏱ ' + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+      if (s <= 0) send(true);
+    }, 1000);
+  }
+}
+async function send(auto) {
+  if (sending) return;
+  const left = A.filter(x => x < 0).length;
+  if (!auto && left && !confirm(`باقي ${left} سؤال بدون إجابة. تسليم الاختبار؟`)) return;
+  sending = true; clearInterval(timer);
+  const b = $('sb'); if (b) { b.disabled = true; b.textContent = 'جاري التسليم...'; }
+  let r = await api({ action: 'submit', id, phone, answers: A });
+  if (r.status === 'error') { sending = false; if (b) { b.disabled = false; b.textContent = 'إعادة المحاولة'; } return alert(r.message); }
+  if (r.status === 'taken') return resultView(r.name, r.score, 'تم تسجيل درجتك مسبقاً:');
+  resultView(r.name, r.score + ' / ' + r.total, auto ? 'انتهى الوقت — نتيجتك:' : 'نتيجتك:');
+}
+
+// ===== نقطة البداية: برابط فيه id = طالب، وبدونه = لوحة المطور =====
+id ? init() : (PASS ? home() : loginView());
+</script></body></html>
