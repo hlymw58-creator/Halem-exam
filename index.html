@@ -4,6 +4,8 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الاختبارات</title>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("shafeei_theme")||"light"}catch(e){}</script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 :root{--primary-color:#1b5e20;--primary-hover:#2e7d32;--bg-color:#f4f6f8;--card-bg:#fff;--text-color:#222;--border-color:#e0e0e0;--danger-color:#d32f2f;--danger-bg:#ffebee;--success-color:#2e7d32;--success-bg:#e8f5e9}
 [data-theme=dark]{--bg-color:#0e1a12;--card-bg:#16221b;--text-color:#e6eee8;--border-color:#2b3f32;--danger-bg:#3b1a1a;--success-bg:#173b1d;--primary-color:#2e7d32;--primary-hover:#3a9440}
@@ -27,6 +29,50 @@ textarea{min-height:70px;resize:vertical}
 .timer{position:sticky;top:0;z-index:5;text-align:center;font-weight:800;font-size:1.2em;padding:8px;background:var(--card-bg);border-bottom:2px solid var(--primary-color)}
 .big{font-size:3em;font-weight:800;color:var(--primary-color);text-align:center}
 .center{text-align:center}
+/* ===== شكل صفحة الطالب (نفس تصميم ملف الاختبار) ===== */
+body.stu{font-family:'Cairo',sans-serif;background:#1e293b url('https://drive.google.com/thumbnail?id=11cx_kG09s3PtT70TFoBZ2S8yw_WvIOkD&sz=w1920') center/cover fixed;color:#fff;min-height:100vh;display:flex;flex-direction:column}
+body.stu::before{content:"";position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:-1}
+body.stu .wrap{max-width:none;width:100%;flex:1;display:flex;flex-direction:column;padding:16px}
+.stu-center{flex:1;display:flex;align-items:center;justify-content:center;width:100%}
+.glass{background:rgba(255,255,255,.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 32px rgba(0,0,0,.5);border-radius:1.5rem;padding:2rem;width:100%;max-width:56rem}
+.glass.narrow{max-width:42rem;text-align:center}
+.fade-in{animation:fadeInS .5s ease-out}
+@keyframes fadeInS{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseS{50%{opacity:.5}}
+.stu-logo{width:8rem;height:8rem;margin:0 auto 1.2rem;border-radius:50%;border:4px solid #eab308;box-shadow:0 0 20px rgba(234,179,8,.4);overflow:hidden;background:#fff}
+.stu-logo img{width:100%;height:100%;object-fit:cover}
+.glass h1{color:#facc15;font-size:2rem;font-weight:700;margin:0 0 .3rem}
+.glass h2{color:#e5e7eb;font-size:1.25rem;font-weight:600;margin:0 0 1.2rem}
+.ex-title{color:#fff;font-size:1.5rem;font-weight:800;margin:.5rem 0}
+.stu-name{font-size:1.25rem;margin:.5rem 0 1rem;color:#e5e7eb}.stu-name b{color:#facc15}
+.stu-info{background:rgba(30,58,138,.5);border:1px solid rgba(96,165,250,.5);color:#dbeafe;padding:.75rem 1rem;border-radius:.5rem;margin-bottom:1.5rem;font-weight:700}
+.stu-msg{background:rgba(127,29,29,.5);border:1px solid rgba(248,113,113,.5);color:#fecaca;padding:1rem;border-radius:.75rem;font-weight:700;margin-bottom:1rem}
+.stu-btn{border:0;border-radius:.5rem;padding:.75rem 2rem;font:700 1.15rem 'Cairo',sans-serif;cursor:pointer;transition:all .2s;color:#111827}
+.stu-btn.gold{background:#eab308;box-shadow:0 4px 15px rgba(234,179,8,.3)}.stu-btn.gold:hover{background:#facc15}
+.stu-btn.green{background:#22c55e;color:#fff}.stu-btn.green:hover{background:#4ade80}
+.stu-btn.gray{background:#374151;color:#fff}.stu-btn.gray:hover{background:#4b5563}
+.stu-btn.big{width:100%;font-size:1.5rem;padding:1rem}.stu-btn.big:hover{transform:scale(1.05)}.stu-btn:disabled{opacity:.5;cursor:not-allowed}
+.q-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,.1)}
+.q-num{font-size:1.2rem;font-weight:700;background:rgba(255,255,255,.1);padding:.5rem 1rem;border-radius:.5rem;color:#e5e7eb}.q-num b{color:#facc15}
+.mot{flex:1;text-align:center;font-size:1.2rem;font-weight:700;color:#4ade80}
+.q-body{min-height:250px;display:flex;flex-direction:column;justify-content:center;margin-bottom:1.5rem}
+.q-text{font-size:1.8rem;font-weight:800;line-height:1.6;text-align:center;margin:0 0 1.5rem;white-space:pre-wrap}
+.q-img{display:block;max-width:100%;max-height:300px;margin:0 auto 1.2rem;border-radius:.75rem}
+.q-opts{width:100%;max-width:42rem;margin:0 auto}
+.q-opt{display:block;width:100%;text-align:right;padding:1rem;margin:.6rem 0;border-radius:.5rem;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.1);font:600 1.25rem 'Cairo',sans-serif;color:#fff;cursor:pointer;transition:all .2s}
+.q-opt:hover{background:rgba(255,255,255,.15);transform:translateY(-2px)}
+.q-opt.sel{background:#10b981;border-color:#34d399;transform:scale(1.02);box-shadow:0 4px 15px rgba(16,185,129,.3)}
+.q-foot{display:flex;align-items:center;padding-top:1.2rem;border-top:1px solid rgba(255,255,255,.1)}
+.tm-wrap{position:relative;width:70px;height:70px}.tm-svg{transform:rotate(-90deg);width:70px;height:70px}
+.tm-bg{fill:none;stroke:rgba(255,255,255,.2);stroke-width:8}
+.tm-fg{fill:none;stroke:#facc15;stroke-width:8;stroke-dasharray:283;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .5s}
+.tm-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+.tm-txt.red{color:#f87171;animation:pulseS 1s infinite}
+.res-circle{width:10rem;height:10rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:900;margin:1rem auto;border:8px solid;box-shadow:0 0 30px rgba(0,0,0,.5)}
+.res-circle.ok{border-color:#22c55e;color:#4ade80;background:rgba(20,83,45,.3)}.res-circle.no{border-color:#ef4444;color:#f87171;background:rgba(127,29,29,.3)}
+.stu-foot{text-align:center;padding:1rem 0;font-size:.95rem;color:#d1d5db;opacity:.85}.stu-foot span{color:#facc15;font-weight:600}
+.swal2-popup{font-family:'Cairo',sans-serif!important;border-radius:1rem!important}
+@media(max-width:640px){.glass{padding:1.2rem}.mot{display:none}.q-text{font-size:1.4rem}.q-opt{font-size:1.1rem}.q-head{justify-content:space-between}}
 </style>
 </head>
 <body><div class="wrap" id="app"><div class="card center">جاري التحميل...</div></div>
@@ -131,19 +177,32 @@ async function save() {
 const qp = new URLSearchParams(location.search), id = qp.get('id');
 let phone = qp.get('phone');
 if (!phone) { try { phone = (JSON.parse(localStorage.getItem('shafeei_student') || 'null') || {}).phone; } catch (e) {} }
-let EX = null, A = [], timer = null, sending = false;
-const msg = m => view(`<div class="card center"><div class="msg">${esc(m)}</div></div>`);
+let EX = null, A = [], cur = 0, timer = null, sending = false;
+const MOTIV = ['توكل على الله، أنت تستطيع!', 'ركز جيداً، الإجابة بين يديك.', 'استعن بالله ولا تعجز.', 'اقرأ السؤال بتمعن، ففهم السؤال نصف الإجابة.'];
+const LOGO = 'https://drive.google.com/thumbnail?id=11cx_kG09s3PtT70TFoBZ2S8yw_WvIOkD&sz=w500';
 
-function img(u) {
+function playSound(t) {
+  try {
+    const C = window.AudioContext || window.webkitAudioContext, c = new C(), o = c.createOscillator(), g = c.createGain(), n = c.currentTime;
+    o.connect(g); g.connect(c.destination);
+    const cfg = { select: ['sine', 600, 600, .1], next: ['triangle', 400, 600, .15], error: ['sawtooth', 150, 150, .3] }[t];
+    o.type = cfg[0]; o.frequency.setValueAtTime(cfg[1], n);
+    if (cfg[2] !== cfg[1]) o.frequency.exponentialRampToValueAtTime(cfg[2], n + .1);
+    g.gain.setValueAtTime(.1, n); g.gain.exponentialRampToValueAtTime(.001, n + cfg[3]);
+    o.start(); o.stop(n + cfg[3]);
+  } catch (e) {}
+}
+function shell(inner, cls) {
+  view(`<div class="stu-center"><div class="glass fade-in ${cls || ''}">${inner}</div></div>
+  <footer class="stu-foot">Executed by <span>Abdelhalim El-Fakharany</span></footer>`);
+}
+const logo = `<div class="stu-logo"><img src="${LOGO}" alt="" onerror="this.style.display='none'"></div>`;
+const msg = m => shell(`${logo}<div class="stu-msg">${esc(m)}</div>`, 'narrow');
+function qimg(u) {
   if (!u) return '';
   const m = u.match(/\/d\/([\w-]+)|[?&]id=([\w-]+)/);
   if (m && /drive\.google/.test(u)) u = 'https://drive.google.com/thumbnail?id=' + (m[1] || m[2]) + '&sz=w1000';
-  return `<img class="qimg" src="${esc(u)}" alt="">`;
-}
-function resultView(name, score, pre) {
-  const p = String(score).match(/(\d+)\s*\/\s*(\d+)/), pct = p ? Math.round(p[1] / p[2] * 100) : null;
-  view(`<div class="card center"><h2>${esc(pre)}</h2><h3>${esc(name)}</h3><div class="big">${esc(score)}</div>
-  ${pct !== null ? `<div class="muted">النسبة: ${pct}%</div>` : ''}<p class="muted">تم تسجيل درجتك ✅ يمكنك إغلاق الصفحة والعودة للمنصة.</p></div>`);
+  return `<img class="q-img" src="${esc(u)}" alt="">`;
 }
 
 async function init() {
@@ -151,41 +210,79 @@ async function init() {
   if (!phone) return msg('ادخل إلى الاختبار من داخل المنصة بعد تسجيل الدخول');
   const r = await api({ action: 'getExam', id, phone });
   if (r.status === 'error') return msg(r.message);
-  if (r.status === 'taken') return resultView(r.name, r.score, 'لقد أديت هذا الاختبار من قبل — درجتك:');
+  if (r.status === 'taken') return resultView(r.name, r.score, 'لقد أديت هذا الاختبار من قبل');
   EX = r; document.title = r.title;
-  view(`<div class="card center"><h1>${esc(r.title)}</h1><p>الطالب: <b>${esc(r.name)}</b></p>
-  <p class="muted">${r.questions.length} سؤال • ${r.minutes ? 'المدة ' + r.minutes + ' دقيقة' : 'بدون مؤقت'}<br>يُسمح بتسليم الاختبار مرة واحدة فقط.</p>
-  <button class="btn" onclick="start()">ابدأ الاختبار</button></div>`);
+  shell(`${logo}<h1>منصة الشافعي الصغير</h1><h2>تحت إدارة أ. أبو بكر الشافعي</h2>
+  <div class="ex-title">${esc(r.title)}</div>
+  <div class="stu-name">الطالب: <b>${esc(r.name)}</b></div>
+  <div class="stu-info">ℹ️ ${r.questions.length} سؤال • ${r.minutes ? 'المدة ' + r.minutes + ' دقيقة' : 'بدون مؤقت'} • محاولة واحدة فقط</div>
+  <button class="stu-btn gold big" onclick="ready()">ابدأ الاختبار الآن</button>`, 'narrow');
+}
+function ready() {
+  Swal.fire({ title: 'جاهز؟', text: EX.minutes ? 'سيبدأ المؤقت فور دخولك.' : '', icon: 'question', showCancelButton: true, confirmButtonColor: '#10b981', cancelButtonColor: '#ef4444', confirmButtonText: 'نعم، ابدأ', cancelButtonText: 'إلغاء' })
+    .then(r => { if (r.isConfirmed) { playSound('next'); start(); } });
 }
 function start() {
-  A = EX.questions.map(() => -1);
-  view(`<div class="timer" id="tm" ${EX.minutes ? '' : 'hidden'}></div>
-  <div class="card"><h2>${esc(EX.title)}</h2><span class="muted">الطالب: ${esc(EX.name)} • أجبت <b id="pg">0</b> من ${A.length}</span></div>
-  ${EX.questions.map((q, i) => `<div class="card"><div class="qtext">${i + 1}) ${esc(q.text)}</div>${img(q.image)}
-  ${q.options.map((o, j) => `<label class="choice"><input type="radio" name="q${i}" onchange="A[${i}]=${j};$('pg').textContent=A.filter(x=>x>=0).length"> ${esc(o)}</label>`).join('')}</div>`).join('')}
-  <div class="center"><button class="btn" id="sb" onclick="send(false)">تسليم الاختبار</button></div>`);
-  window.scrollTo(0, 0);
+  A = EX.questions.map(() => -1); cur = 0;
+  shell(`<div class="q-head"><div class="q-num">السؤال: <b id="qn">1</b> / ${A.length}</div><div class="mot" id="mot"></div>
+  ${EX.minutes ? `<div class="tm-wrap"><svg class="tm-svg" viewBox="0 0 100 100"><circle class="tm-bg" cx="50" cy="50" r="45"></circle><circle id="tc" class="tm-fg" cx="50" cy="50" r="45"></circle></svg><div class="tm-txt" id="tt"></div></div>` : ''}</div>
+  <div class="q-body" id="qb"><h3 class="q-text" id="qt"></h3><div id="qi"></div><div class="q-opts" id="qo"></div></div>
+  <div class="q-foot"><button class="stu-btn gray" id="pv" onclick="prevQ()">السابق</button><span style="flex:1"></span><button class="stu-btn gold" id="nx" onclick="nextQ()">التالي</button></div>`);
+  load(0);
   if (EX.minutes) {
-    const end = Date.now() + EX.minutes * 60000;
-    timer = setInterval(() => {
-      const s = Math.max(0, Math.round((end - Date.now()) / 1000));
-      $('tm').textContent = '⏱ ' + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
-      if (s <= 0) send(true);
-    }, 1000);
+    const total = EX.minutes * 60, t0 = Date.now(), tc = $('tc'), tt = $('tt');
+    const tick = () => {
+      const el = Math.floor((Date.now() - t0) / 1000), rem = Math.max(0, total - el);
+      tt.textContent = String(Math.floor(rem / 60)).padStart(2, '0') + ':' + String(rem % 60).padStart(2, '0');
+      tc.style.strokeDashoffset = 283 * (el / total);
+      if (rem <= 60) { tc.style.stroke = '#ef4444'; tt.classList.add('red'); }
+      if (rem <= 0) { clearInterval(timer); playSound('error'); send(true); }
+    };
+    tick(); timer = setInterval(tick, 1000);
   }
 }
+function load(i) {
+  cur = i; const q = EX.questions[i];
+  $('qn').textContent = i + 1; $('mot').textContent = MOTIV[Math.floor(Math.random() * MOTIV.length)];
+  $('qt').textContent = q.text; $('qi').innerHTML = qimg(q.image);
+  $('qo').innerHTML = q.options.map((o, j) => `<button class="q-opt ${A[i] === j ? 'sel' : ''}" onclick="pick(${j},this)">${esc(o)}</button>`).join('');
+  const b = $('qb'); b.classList.remove('fade-in'); void b.offsetWidth; b.classList.add('fade-in');
+  $('pv').style.visibility = i === 0 ? 'hidden' : 'visible';
+  const last = i === A.length - 1, nx = $('nx');
+  nx.textContent = last ? 'إنهاء وتسليم' : 'التالي'; nx.className = 'stu-btn ' + (last ? 'green' : 'gold');
+}
+function pick(j, el) { playSound('select'); A[cur] = j; [...$('qo').children].forEach(b => b.classList.remove('sel')); el.classList.add('sel'); }
+function prevQ() { playSound('next'); if (cur > 0) load(cur - 1); }
+function nextQ() {
+  if (A[cur] < 0) { playSound('error'); return Swal.fire({ icon: 'warning', title: 'انتظر', text: 'يجب اختيار إجابة قبل الانتقال.', confirmButtonText: 'حسناً', confirmButtonColor: '#eab308' }); }
+  if (cur < A.length - 1) { playSound('next'); return load(cur + 1); }
+  Swal.fire({ title: 'تسليم الاختبار؟', text: 'لن تستطيع تعديل إجاباتك بعد التسليم.', icon: 'question', showCancelButton: true, confirmButtonColor: '#10b981', cancelButtonColor: '#ef4444', confirmButtonText: 'نعم، سلّم', cancelButtonText: 'رجوع' })
+    .then(r => { if (r.isConfirmed) send(false); });
+}
 async function send(auto) {
-  if (sending) return;
-  const left = A.filter(x => x < 0).length;
-  if (!auto && left && !confirm(`باقي ${left} سؤال بدون إجابة. تسليم الاختبار؟`)) return;
-  sending = true; clearInterval(timer);
-  const b = $('sb'); if (b) { b.disabled = true; b.textContent = 'جاري التسليم...'; }
-  let r = await api({ action: 'submit', id, phone, answers: A });
-  if (r.status === 'error') { sending = false; if (b) { b.disabled = false; b.textContent = 'إعادة المحاولة'; } return alert(r.message); }
-  if (r.status === 'taken') return resultView(r.name, r.score, 'تم تسجيل درجتك مسبقاً:');
-  resultView(r.name, r.score + ' / ' + r.total, auto ? 'انتهى الوقت — نتيجتك:' : 'نتيجتك:');
+  if (sending) return; sending = true; clearInterval(timer);
+  shell(`${logo}<div class="ex-title">جاري تسجيل درجتك...</div>`, 'narrow');
+  const r = await api({ action: 'submit', id, phone, answers: A });
+  if (r.status === 'error') {
+    sending = false;
+    return shell(`${logo}<div class="stu-msg">${esc(r.message)}</div><button class="stu-btn gold big" onclick="send(true)">إعادة المحاولة</button>`, 'narrow');
+  }
+  if (r.status === 'taken') return resultView(r.name, r.score, 'تم تسجيل درجتك مسبقاً');
+  resultView(r.name, r.score + ' / ' + r.total, auto ? 'انتهى الوقت — نتيجتك' : 'نتيجتك النهائية');
+}
+function resultView(name, score, title) {
+  const p = String(score).match(/(\d+)\s*\/\s*(\d+)/), pct = p ? Math.round(p[1] / p[2] * 100) : 0, ok = pct >= 50;
+  shell(`<h1 style="color:${ok ? '#4ade80' : '#f87171'}">${esc(title)}</h1>
+  <div class="stu-name">الطالب: <b>${esc(name)}</b></div>
+  <div class="res-circle ${ok ? 'ok' : 'no'}"><span id="pc">0%</span></div>
+  <div class="ex-title">${esc(score)}</div>
+  <p style="font-size:1.3rem;font-weight:700;color:${ok ? '#86efac' : '#fca5a5'}">${ok ? 'عمل رائع ومجهود مميز، استمر في تفوقك يا بطل!' : 'لا تحزن، هذه فرصة للتعلم. راجع دروسك وانطلق من جديد!'}</p>
+  <p style="opacity:.75">تم تسجيل درجتك ✅ يمكنك العودة للمنصة.</p>`, 'narrow');
+  playSound(ok ? 'next' : 'error');
+  let n = 0; const iv = setInterval(() => { if (n >= pct) { clearInterval(iv); $('pc').textContent = pct + '%'; } else $('pc').textContent = (++n) + '%'; }, 20);
 }
 
 // ===== نقطة البداية: برابط فيه id = طالب، وبدونه = لوحة المطور =====
+if (id) document.body.classList.add('stu');
 id ? init() : (PASS ? home() : loginView());
 </script></body></html>
