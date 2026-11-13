@@ -71,6 +71,16 @@ body.stu .wrap{max-width:none;width:100%;flex:1;display:flex;flex-direction:colu
 .res-circle{width:10rem;height:10rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:900;margin:1rem auto;border:8px solid;box-shadow:0 0 30px rgba(0,0,0,.5)}
 .res-circle.ok{border-color:#22c55e;color:#4ade80;background:rgba(20,83,45,.3)}.res-circle.no{border-color:#ef4444;color:#f87171;background:rgba(127,29,29,.3)}
 .stu-foot{text-align:center;padding:1rem 0;font-size:.95rem;color:#d1d5db;opacity:.85}.stu-foot span{color:#facc15;font-weight:600}
+/* ===== مراجعة الإجابات ===== */
+.rv-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:1rem;padding:1rem;margin:1rem 0;text-align:right}
+.rv-item.bad{border-color:rgba(248,113,113,.6)}.rv-item.ok{border-color:rgba(74,222,128,.5)}
+.rv-h{display:flex;justify-content:space-between;font-weight:800;color:#facc15;margin-bottom:.4rem}
+.rv-q{font-size:1.25rem;font-weight:700;white-space:pre-wrap;margin-bottom:.8rem}
+.rv-opt{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:.7rem 1rem;margin:.4rem 0;border-radius:.5rem;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);font-weight:600}
+.rv-opt.right{background:rgba(34,197,94,.2);border-color:#22c55e;color:#bbf7d0}
+.rv-opt.wrong{background:rgba(239,68,68,.2);border-color:#ef4444;color:#fecaca}
+.rv-tag{font-size:.8rem;font-weight:800;white-space:nowrap}
+.rv-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:1rem 0}
 .swal2-popup{font-family:'Cairo',sans-serif!important;border-radius:1rem!important}
 @media(max-width:640px){.glass{padding:1.2rem}.mot{display:none}.q-text{font-size:1.4rem}.q-opt{font-size:1.1rem}.q-head{justify-content:space-between}}
 </style>
@@ -177,7 +187,7 @@ async function save() {
 const qp = new URLSearchParams(location.search), id = qp.get('id');
 let phone = qp.get('phone');
 if (!phone) { try { phone = (JSON.parse(localStorage.getItem('shafeei_student') || 'null') || {}).phone; } catch (e) {} }
-let EX = null, A = [], cur = 0, timer = null, sending = false;
+let EX = null, A = [], cur = 0, timer = null, sending = false, CORRECT = null, RES = null;
 const MOTIV = ['توكل على الله، أنت تستطيع!', 'ركز جيداً، الإجابة بين يديك.', 'استعن بالله ولا تعجز.', 'اقرأ السؤال بتمعن، ففهم السؤال نصف الإجابة.'];
 const LOGO = 'https://drive.google.com/thumbnail?id=11cx_kG09s3PtT70TFoBZ2S8yw_WvIOkD&sz=w500';
 
@@ -268,7 +278,9 @@ async function send(auto) {
     return shell(`${logo}<div class="stu-msg">${esc(r.message)}</div><button class="stu-btn gold big" onclick="send(true)">إعادة المحاولة</button>`, 'narrow');
   }
   if (r.status === 'taken') return resultView(r.name, r.score, 'تم تسجيل درجتك مسبقاً');
-  resultView(r.name, r.score + ' / ' + r.total, auto ? 'انتهى الوقت — نتيجتك' : 'نتيجتك النهائية');
+  CORRECT = Array.isArray(r.correct) ? r.correct.map(Number) : null;
+  RES = { name: r.name, score: r.score + ' / ' + r.total, title: auto ? 'انتهى الوقت — نتيجتك' : 'نتيجتك النهائية' };
+  resultView(RES.name, RES.score, RES.title);
 }
 function resultView(name, score, title) {
   const p = String(score).match(/(\d+)\s*\/\s*(\d+)/), pct = p ? Math.round(p[1] / p[2] * 100) : 0, ok = pct >= 50;
@@ -277,9 +289,37 @@ function resultView(name, score, title) {
   <div class="res-circle ${ok ? 'ok' : 'no'}"><span id="pc">0%</span></div>
   <div class="ex-title">${esc(score)}</div>
   <p style="font-size:1.3rem;font-weight:700;color:${ok ? '#86efac' : '#fca5a5'}">${ok ? 'عمل رائع ومجهود مميز، استمر في تفوقك يا بطل!' : 'لا تحزن، هذه فرصة للتعلم. راجع دروسك وانطلق من جديد!'}</p>
-  <p style="opacity:.75">تم تسجيل درجتك ✅ يمكنك العودة للمنصة.</p>`, 'narrow');
+  <p style="opacity:.75">تم تسجيل درجتك ✅ يمكنك العودة للمنصة.</p>
+  ${CORRECT ? `<button class="stu-btn gold big" style="margin-top:1rem" onclick="reviewView(false)">📋 مراجعة إجاباتي</button>` : ''}`, 'narrow');
   playSound(ok ? 'next' : 'error');
   let n = 0; const iv = setInterval(() => { if (n >= pct) { clearInterval(iv); $('pc').textContent = pct + '%'; } else $('pc').textContent = (++n) + '%'; }, 20);
+}
+
+// ===== مراجعة الإجابات بعد التسليم =====
+function reviewView(all) {
+  const items = EX.questions.map((q, i) => ({ q, i, mine: A[i], right: CORRECT[i] }));
+  const wrong = items.filter(x => x.mine !== x.right);
+  const list = all ? items : wrong;
+  const body = list.length ? list.map(x => {
+    const ok = x.mine === x.right;
+    const opts = x.q.options.map((o, j) => {
+      const isRight = j === x.right, isMine = j === x.mine && !isRight;
+      return `<div class="rv-opt ${isRight ? 'right' : isMine ? 'wrong' : ''}"><span>${esc(o)}</span>
+        ${isRight ? `<span class="rv-tag">✔ الإجابة الصحيحة${j === x.mine ? ' (وهي اختيارك)' : ''}</span>` : ''}
+        ${isMine ? '<span class="rv-tag">✘ إجابتك</span>' : ''}</div>`;
+    }).join('');
+    return `<div class="rv-item ${ok ? 'ok' : 'bad'}">
+      <div class="rv-h"><span>سؤال ${x.i + 1}</span><span>${ok ? '✅ صحيحة' : x.mine < 0 ? '⚠️ لم تُجب' : '❌ خاطئة'}</span></div>
+      <div class="rv-q">${esc(x.q.text)}</div>${qimg(x.q.image)}${opts}</div>`;
+  }).join('') : '<div class="stu-info">🎉 ما شاء الله! أجبت على كل الأسئلة بشكل صحيح.</div>';
+
+  shell(`<h1>مراجعة الإجابات</h1>
+    <div class="stu-info">أخطأت في ${wrong.length} من ${items.length} سؤال</div>
+    <div class="rv-bar">
+      <button class="stu-btn gray" onclick="reviewView(${!all})">${all ? 'عرض الأخطاء فقط' : 'عرض كل الأسئلة'}</button>
+      <button class="stu-btn gold" onclick="resultView(RES.name,RES.score,RES.title)">رجوع للنتيجة</button>
+    </div>${body}`);
+  window.scrollTo(0, 0);
 }
 
 // ===== نقطة البداية: برابط فيه id = طالب، وبدونه = لوحة المطور =====
