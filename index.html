@@ -187,7 +187,7 @@ async function save() {
 const qp = new URLSearchParams(location.search), id = qp.get('id');
 let phone = qp.get('phone');
 if (!phone) { try { phone = (JSON.parse(localStorage.getItem('shafeei_student') || 'null') || {}).phone; } catch (e) {} }
-let EX = null, A = [], cur = 0, timer = null, sending = false, CORRECT = null, RES = null;
+let EX = null, A = [], cur = 0, timer = null, sending = false, CORRECT = null, RES = null, REVQ = null;
 const MOTIV = ['توكل على الله، أنت تستطيع!', 'ركز جيداً، الإجابة بين يديك.', 'استعن بالله ولا تعجز.', 'اقرأ السؤال بتمعن، ففهم السؤال نصف الإجابة.'];
 const LOGO = 'https://drive.google.com/thumbnail?id=11cx_kG09s3PtT70TFoBZ2S8yw_WvIOkD&sz=w500';
 
@@ -220,7 +220,7 @@ async function init() {
   if (!phone) return msg('ادخل إلى الاختبار من داخل المنصة بعد تسجيل الدخول');
   const r = await api({ action: 'getExam', id, phone });
   if (r.status === 'error') return msg(r.message);
-  if (r.status === 'taken') return resultView(r.name, r.score, 'لقد أديت هذا الاختبار من قبل');
+  if (r.status === 'taken') { setReview(r); return resultView(r.name, r.score, 'لقد أديت هذا الاختبار من قبل'); }
   EX = r; document.title = r.title;
   shell(`${logo}<h1>منصة الشافعي الصغير</h1><h2>تحت إدارة أ. أبو بكر الشافعي</h2>
   <div class="ex-title">${esc(r.title)}</div>
@@ -277,12 +277,12 @@ async function send(auto) {
     sending = false;
     return shell(`${logo}<div class="stu-msg">${esc(r.message)}</div><button class="stu-btn gold big" onclick="send(true)">إعادة المحاولة</button>`, 'narrow');
   }
-  if (r.status === 'taken') return resultView(r.name, r.score, 'تم تسجيل درجتك مسبقاً');
-  CORRECT = Array.isArray(r.correct) ? r.correct.map(Number) : null;
-  RES = { name: r.name, score: r.score + ' / ' + r.total, title: auto ? 'انتهى الوقت — نتيجتك' : 'نتيجتك النهائية' };
-  resultView(RES.name, RES.score, RES.title);
+  if (r.status === 'taken') { setReview(r); return resultView(r.name, r.score, 'تم تسجيل درجتك مسبقاً'); }
+  CORRECT = Array.isArray(r.correct) ? r.correct.map(Number) : null; REVQ = EX.questions;
+  resultView(r.name, r.score + ' / ' + r.total, auto ? 'انتهى الوقت — نتيجتك' : 'نتيجتك النهائية');
 }
 function resultView(name, score, title) {
+  RES = { name, score, title };
   const p = String(score).match(/(\d+)\s*\/\s*(\d+)/), pct = p ? Math.round(p[1] / p[2] * 100) : 0, ok = pct >= 50;
   shell(`<h1 style="color:${ok ? '#4ade80' : '#f87171'}">${esc(title)}</h1>
   <div class="stu-name">الطالب: <b>${esc(name)}</b></div>
@@ -296,8 +296,14 @@ function resultView(name, score, title) {
 }
 
 // ===== مراجعة الإجابات بعد التسليم =====
+// تجهيز بيانات المراجعة من رد السيرفر لطالب أدّى الاختبار سابقاً
+function setReview(r) {
+  if (r && Array.isArray(r.correct) && Array.isArray(r.answers) && Array.isArray(r.questions)) {
+    CORRECT = r.correct.map(Number); A = r.answers.map(Number); REVQ = r.questions;
+  } else { CORRECT = null; }
+}
 function reviewView(all) {
-  const items = EX.questions.map((q, i) => ({ q, i, mine: A[i], right: CORRECT[i] }));
+  const items = REVQ.map((q, i) => ({ q, i, mine: A[i], right: CORRECT[i] }));
   const wrong = items.filter(x => x.mine !== x.right);
   const list = all ? items : wrong;
   const body = list.length ? list.map(x => {
